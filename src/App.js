@@ -1,10 +1,99 @@
-import logo from './logo.svg';
-import './App.css';
-import { Home } from './pages/Home';
+import { useEffect, useState } from 'react'
+import axios from "axios";
+import Router from "./routes/Router"
+import { BASE_URL } from "./constants/BASE_URL";
+import { GlobalStyled } from './GlobalStyle.js';
+import { GlobalContext } from './context/GlobalContext';
+import Modal from './components/Modal/Modal'
 
 function App() {
+  const [pokemons, setPokemons] = useState([])
+  const [pokedex, setPokedex] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [detailPokemon, setDetailPokemon] = useState([])
+  const [showModal, setShowModal] = useState(false)
+  const [action, setAction] = useState("")
+
+  useEffect(() => {
+    browserPokemon()
+  }, [])
+
+  const browserPokemon = async () => {
+    let i = 1
+    setIsLoading(true)
+
+    const auxPokemon = [...new Set(pokemons)]
+    if (pokemons.length > 0) {
+      return
+    } else {
+
+      while (i <= 150) {
+        try {
+          const response = await axios.get(`${BASE_URL}/${i}`)
+          auxPokemon.push(response.data)
+          setPokemons(auxPokemon)
+          setDetailPokemon(auxPokemon)
+          console.log(`${response.data.name} adicionado na sua pokedex!`)
+        } catch (error) {
+          console.log(`Erro!${error.data.name} não foi adicionado.`)
+          console.log(error)
+        }
+        i++
+      }
+      setIsLoading(false)
+    }
+  }
+
+  function addPokemonPokedex(pokemonAdd) {
+    setShowModal(true)
+    setAction("add")
+    const pokemonOnList = pokemons.filter(
+      (pokemon) => pokemon.id !== pokemonAdd.id)
+
+    const newBrowserPokedex = [...pokedex, pokemonAdd]
+    setPokedex(newBrowserPokedex)
+    setPokemons(pokemonOnList)
+    console.log("Adicionar Pokemon", pokemonOnList)
+    console.log("Pokedex", pokedex)
+  }
+
+  function removePokemonPokedex(pokemonAdd) {
+    setShowModal(true)
+    setAction("remove")
+    const pokemonOnPokedex = pokedex.filter(
+      (pokemon) => pokemon.id !== pokemonAdd.id)
+
+    const newBrowserPokelist = [...pokemons, pokemonAdd]
+    console.log("newBrowser", newBrowserPokelist)
+    setPokedex(pokemonOnPokedex)
+    setPokemons(newBrowserPokelist)
+  }
+
+  const context = {
+    pokemons,
+    setPokemons,
+    detailPokemon,
+    setDetailPokemon,
+    pokedex,
+    setPokedex,
+    isLoading,
+    setIsLoading,
+    addPokemonPokedex,
+    removePokemonPokedex,
+    showModal,
+    setShowModal,
+    action,
+    setAction,
+  }
+
   return (
-    <Home/>
+    <>
+      <GlobalStyled />
+      <GlobalContext.Provider value={context}>
+        <Router />
+        {showModal ? <Modal action={action} /> : ''}
+      </GlobalContext.Provider>
+    </>
   );
 }
 
